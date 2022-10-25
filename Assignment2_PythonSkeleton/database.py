@@ -108,8 +108,17 @@ def findInstructionsByCriteria(searchString):
 Add a new instruction
 '''
 def addInstruction(amount, frequency, customer, administrator, etf, notes):
-
-    return
+    try:
+        conn = openConnection()
+        curs = conn.cursor()
+        curs.execute("""INSERT INTO InvestInstruction (Amount, Frequency, ExpiryDate, Customer, Administrator, Code, Notes) 
+                    VALUES (%s, %s, CURRENT_DATE + INTERVAL '1 Y', %s, %s, %s, %s)""", (amount, frequency, customer, administrator, etf, notes,)) 
+        conn.commit()
+        curs.close()
+        conn.close()
+    except:
+        return False
+    return True
 
 
 '''
