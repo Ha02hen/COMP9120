@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from unittest import result
+from itsdangerous import NoneAlgorithm
 import psycopg2
 
 #####################################################
@@ -41,7 +43,48 @@ List all the associated instructions in the database by administrator
 '''
 def findInstructionsByAdm(login):
 
-    return
+    conn = openConnection()
+    curs = conn.cursor()
+    curs.execute("""SELECT A.instructionid, 
+                    A.amount, 
+                    A.frequency, 
+                    A.expirydate, 
+                    concat(B.firstname, ' ', B.lastname) AS fullname, 
+                    A.code,
+                    A.notes,
+                    CASE A.expirydate>=current_date WHEN TRUE THEN 1
+                    ELSE 2 END AS ifexpiry
+                    FROM investinstruction A
+                    LEFT JOIN customer B
+                    ON A.customer = B.login
+                    LEFT JOIN ETF C
+                    ON C.code = A.code
+                    WHERE administrator = %s
+                    ORDER BY ifexpiry, A.expirydate ASC, fullname DESC""", (login,))
+    
+    result = curs.fetchall()
+
+    instruction_list = list()
+    for instruction in result:
+        instruction_list.append(
+            {
+                'instruction_id': instruction[0],
+                'amount': instruction[1],
+                'frequency': instruction[2],
+                'expirydate': instruction[3],
+                'customer': instruction[4],
+                'etf': instruction[5],
+                'notes': instruction[6]
+            }
+        )
+    
+    curs.close()
+    conn.close()
+
+    if result is None:
+        return None
+    else:
+        return instruction_list
 
 
 '''
