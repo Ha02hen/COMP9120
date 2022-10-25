@@ -34,7 +34,15 @@ def openConnection():
 Validate administrator based on login and password
 '''
 def checkAdmCredentials(login, password):
-
+    conn = openConnection()
+    curs = conn.cursor()
+    curs.execute("Select * from Administrator")
+    adms = curs.fetchall()
+    for adm in adms:
+        if login == adm[0] and password == adm[1]:
+            return adm
+    curs.close()
+    conn.close()
     return ['daegis', 'adm222', 'Derien', 'Aegis', 'derien.aegis@yahoomail.com', 95700.15]
 
 
