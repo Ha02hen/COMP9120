@@ -130,7 +130,7 @@ def updateInstruction(instructionid, amount, frequency, expirydate, customer, ad
         curs = conn.cursor()
 
         curs.execute(
-            "UPDATE investinstruction SET amount = %s,  frequency = %s,  expirydate =CURRENT_DATE + INTERVAL '1 Y', customer = %s , administrator = %s, etf = %s,  notes = %s WHERE instructionid = %s",
+            "UPDATE investinstruction SET amount = %s,  frequency = %s,  expirydate = date , customer = %s , administrator = %s, etf = %s,  notes = %s WHERE instructionid = %s",
             (amount, frequency, customer, administrator, etf, notes, instructionid,)
         )
         conn.commit()
