@@ -43,7 +43,7 @@ def checkAdmCredentials(login, password):
             return adm
     curs.close()
     conn.close()
-    return ['daegis', 'adm222', 'Derien', 'Aegis', 'derien.aegis@yahoomail.com', 95700.15]
+
 
 
 '''
