@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from unittest import result
-from itsdangerous import NoneAlgorithm
+# from unittest import result
+# from itsdangerous import NoneAlgorithm
 import psycopg2
 
 #####################################################
@@ -26,7 +26,7 @@ def openConnection():
                                     host=myHost)
     except psycopg2.Error as sqle:
         print("psycopg2.Error : " + sqle.pgerror)
-    
+
     # return the connection to use
     return conn
 
@@ -69,7 +69,7 @@ def findInstructionsByAdm(login):
                     ON C.code = A.code
                     WHERE administrator = %s
                     ORDER BY ifexpiry, A.expirydate ASC, fullname DESC""", (login,))
-    
+
     result = curs.fetchall()
 
     instruction_list = list()
@@ -85,7 +85,7 @@ def findInstructionsByAdm(login):
                 'notes': instruction[6]
             }
         )
-    
+
     curs.close()
     conn.close()
 
@@ -101,7 +101,58 @@ See assignment description for search specification
 '''
 def findInstructionsByCriteria(searchString):
 
-    return
+    conn = openConnection()
+    curs = conn.cursor()
+
+    curs.execute("""SELECT InvestInstruction.instructionid, 
+                    InvestInstruction.amount, 
+                    Frequency.frequencydesc, 
+                    InvestInstruction.expirydate, 
+					Concat(Customer.firstname, ' ', Customer.lastname) AS fullname, 
+                    ETF.name,
+                    InvestInstruction.notes,
+					InvestInstruction.administrator
+                    from InvestInstruction
+                    LEFT JOIN Customer
+					ON InvestInstruction.customer = Customer.login
+					LEFT JOIN ETF
+					ON InvestInstruction.code = ETF.code
+					LEFT JOIN frequency 
+					ON frequency.frequencycode = InvestInstruction.frequency
+                    WHERE (LOWER(Concat(Customer.firstname, ' ', Customer.lastname)) LIKE LOWER('%{}%') 
+					OR LOWER(ETF.name) LIKE LOWER('%{}%')
+					OR LOWER(InvestInstruction.notes) LIKE LOWER('%{}%'))
+					AND InvestInstruction.expirydate >= CURRENT_DATE
+					ORDER BY InvestInstruction.administrator IS NOT NULL,
+					InvestInstruction.expirydate""".format(searchString,searchString,searchString))
+
+    result = curs.fetchall()
+
+    instruction_list = list()
+    for instruction in result:
+        if instruction[6] is None:
+            note = " "
+        else:
+            note = instruction[6]
+        instruction_list.append(
+            {
+                'instruction_id': instruction[0],
+                'amount': instruction[1],
+                'frequency': instruction[2],
+                'expirydate': instruction[3],
+                'customer': instruction[4],
+                'etf': instruction[5],
+                'notes': note
+            }
+        )
+
+    curs.close()
+    conn.close()
+
+    if result is None:
+        return None
+    else:
+        return instruction_list
 
 
 '''
@@ -112,7 +163,7 @@ def addInstruction(amount, frequency, customer, administrator, etf, notes):
         conn = openConnection()
         curs = conn.cursor()
         curs.execute("""INSERT INTO InvestInstruction (Amount, Frequency, ExpiryDate, Customer, Administrator, Code, Notes) 
-                    VALUES (%s, %s, CURRENT_DATE + INTERVAL '1 Y', %s, %s, %s, %s)""", (amount, frequency, customer, administrator, etf, notes,)) 
+                    VALUES (%s, %s, CURRENT_DATE + INTERVAL '1 Y', %s, %s, %s, %s)""", (amount, frequency, customer, administrator, etf, notes,))
         conn.commit()
         curs.close()
         conn.close()
