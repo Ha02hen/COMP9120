@@ -185,24 +185,21 @@ def addInstruction(amount, frequency, customer, administrator, etf, notes):
 Update an existing instruction
 '''
 def updateInstruction(instructionid, amount, frequency, expirydate, customer, administrator, etf, notes):
-    def updateInstruction(instructionid, amount, frequency, expirydate, customer, administrator, etf, notes):
+    success = True
+    conn = openConnection()
+    curs = conn.cursor()
 
-        conn = openConnection()
-        curs = conn.cursor()
+    try:
+        curs.execute(
+            "UPDATE investinstruction SET amount = {}, frequency = '{}', expiryDate = '{}', customer = '{}', administrator = '{}', code = '{}', notes = '{}' WHERE instructionId = {}".format(amount, frequency, expirydate, customer, administrator, etf, notes, instructionid)
+        )
+        conn.commit()
 
-        try:
-            curs.execute(
-                "UPDATE InvestInstruction SET amount = {}, frequency = '{}', expiryDate = '{}', customer = '{}', administrator = '{}', code = '{}', notes = '{}' WHERE instructionId = {}".format(
-                    amount, frequency, expirydate, customer, administrator, etf, notes, instructionid)
-            )
-            conn.commit()
+    except psycopg2.Error as sqle:
+        print("psycopg2.Error : " + sqle.pgerror)
+        success = False
 
-
-
-        except:
-            return False
-        if conn.affected_rows() != 1:
-            return False
-        curs.close()
-        conn.close()
-        return True
+    conn.commit()
+    curs.close()
+    conn.close()
+    return success
