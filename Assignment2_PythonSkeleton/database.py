@@ -55,10 +55,10 @@ def findInstructionsByAdm(login):
     curs = conn.cursor()
     curs.execute("""SELECT A.instructionid, 
                     A.amount, 
-                    A.frequency, 
+                    D.frequencydesc, 
                     A.expirydate, 
                     concat(B.firstname, ' ', B.lastname) AS fullname, 
-                    A.code,
+                    C.name,
                     A.notes,
                     CASE A.expirydate>=current_date WHEN TRUE THEN 1
                     ELSE 2 END AS ifexpiry
@@ -67,6 +67,8 @@ def findInstructionsByAdm(login):
                     ON A.customer = B.login
                     LEFT JOIN ETF C
                     ON C.code = A.code
+					LEFT JOIN frequency D
+					ON D.frequencycode = A.frequency
                     WHERE administrator = %s
                     ORDER BY ifexpiry, A.expirydate ASC, fullname DESC""", (login,))
 
@@ -74,6 +76,10 @@ def findInstructionsByAdm(login):
 
     instruction_list = list()
     for instruction in result:
+        if instruction[6] is None:
+            note = " "
+        else:
+            note = instruction[6]
         instruction_list.append(
             {
                 'instruction_id': instruction[0],
@@ -82,7 +88,7 @@ def findInstructionsByAdm(login):
                 'expirydate': instruction[3],
                 'customer': instruction[4],
                 'etf': instruction[5],
-                'notes': instruction[6]
+                'notes': note
             }
         )
 
@@ -162,8 +168,10 @@ def addInstruction(amount, frequency, customer, administrator, etf, notes):
     try:
         conn = openConnection()
         curs = conn.cursor()
+        curs.execute("""SELECT FrequencyCode FROM frequency WHERE frequencydesc = %s""", (frequency,))
+        result = curs.fetchall()
         curs.execute("""INSERT INTO InvestInstruction (Amount, Frequency, ExpiryDate, Customer, Administrator, Code, Notes) 
-                    VALUES (%s, %s, CURRENT_DATE + INTERVAL '1 Y', %s, %s, %s, %s)""", (amount, frequency, customer, administrator, etf, notes,))
+                    VALUES (%s, %s, CURRENT_DATE + INTERVAL '1 Y', %s, %s, %s, %s)""", (amount, result, customer, administrator, etf, notes,))
         conn.commit()
         curs.close()
         conn.close()
