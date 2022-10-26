@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# from unittest import result
-# from itsdangerous import NoneAlgorithm
 import psycopg2
 
 #####################################################
@@ -165,18 +163,21 @@ def findInstructionsByCriteria(searchString):
 Add a new instruction
 '''
 def addInstruction(amount, frequency, customer, administrator, etf, notes):
+    
     try:
         conn = openConnection()
         curs = conn.cursor()
         curs.execute("""SELECT FrequencyCode FROM frequency WHERE frequencydesc = %s""", (frequency,))
-        result = curs.fetchall()
+        result = curs.fetchone()
         curs.execute("""INSERT INTO InvestInstruction (Amount, Frequency, ExpiryDate, Customer, Administrator, Code, Notes) 
                     VALUES (%s, %s, CURRENT_DATE + INTERVAL '1 Y', %s, %s, %s, %s)""", (amount, result, customer, administrator, etf, notes,))
-        conn.commit()
-        curs.close()
-        conn.close()
+        
     except:
         return False
+
+    conn.commit()
+    curs.close()
+    conn.close()
     return True
 
 
