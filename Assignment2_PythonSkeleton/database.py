@@ -184,20 +184,24 @@ def addInstruction(amount, frequency, customer, administrator, etf, notes):
 Update an existing instruction
 '''
 def updateInstruction(instructionid, amount, frequency, expirydate, customer, administrator, etf, notes):
-    try:
+    def updateInstruction(instructionid, amount, frequency, expirydate, customer, administrator, etf, notes):
+
         conn = openConnection()
         curs = conn.cursor()
 
-        curs.execute(
-            "UPDATE investinstruction SET amount = %s,  frequency = %s,  expirydate = date , customer = %s , administrator = %s, etf = %s,  notes = %s WHERE instructionid = %s",
-            (amount, frequency, customer, administrator, etf, notes, instructionid,)
-        )
-        conn.commit()
+        try:
+            curs.execute(
+                "UPDATE InvestInstruction SET amount = {}, frequency = '{}', expiryDate = '{}', customer = '{}', administrator = '{}', code = '{}', notes = '{}' WHERE instructionId = {}".format(
+                    amount, frequency, expirydate, customer, administrator, etf, notes, instructionid)
+            )
+            conn.commit()
+
+
+
+        except:
+            return False
+        if conn.affected_rows() != 1:
+            return False
         curs.close()
         conn.close()
-
-
-    except:
-
-        return False
-    return True
+        return True
