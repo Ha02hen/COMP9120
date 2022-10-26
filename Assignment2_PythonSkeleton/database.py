@@ -169,7 +169,7 @@ def addInstruction(amount, frequency, customer, administrator, etf, notes):
         conn = openConnection()
         curs = conn.cursor()
         curs.execute("""SELECT FrequencyCode FROM frequency WHERE frequencydesc = %s""", (frequency,))
-        result = curs.fetchall()
+        result = curs.fetchone()
         curs.execute("""INSERT INTO InvestInstruction (Amount, Frequency, ExpiryDate, Customer, Administrator, Code, Notes) 
                     VALUES (%s, %s, CURRENT_DATE + INTERVAL '1 Y', %s, %s, %s, %s)""", (amount, result, customer, administrator, etf, notes,))
         conn.commit()
