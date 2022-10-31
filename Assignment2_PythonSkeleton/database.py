@@ -167,11 +167,7 @@ def addInstruction(amount, frequency, customer, administrator, etf, notes):
     try:
         conn = openConnection()
         curs = conn.cursor()
-        curs.execute("""SELECT FrequencyCode FROM frequency WHERE frequencydesc = %s""", (frequency,))
-        result = curs.fetchone()
-        curs.execute("""INSERT INTO InvestInstruction (Amount, Frequency, ExpiryDate, Customer, Administrator, Code, Notes) 
-                    VALUES (%s, %s, CURRENT_DATE + INTERVAL '1 Y', %s, %s, %s, %s)""", (amount, result, customer, administrator, etf, notes,))
-        
+        curs.callproc("addInstruction", [frequency, amount, customer, administrator, etf, notes])
     except:
         return False
 
@@ -190,10 +186,7 @@ def updateInstruction(instructionid, amount, frequency, expirydate, customer, ad
     curs = conn.cursor()
 
     try:
-        curs.execute(
-            "UPDATE investinstruction SET amount = {}, frequency = '{}', expiryDate = '{}', customer = '{}', administrator = '{}', code = '{}', notes = '{}' WHERE instructionId = {}".format(amount, frequency, expirydate, customer, administrator, etf, notes, instructionid)
-        )
-        conn.commit()
+        curs.callproc("updateInstruction", [amount, frequency, expirydate, customer, administrator, etf, notes, instructionid])
 
     except psycopg2.Error as sqle:
         print("psycopg2.Error : " + sqle.pgerror)
