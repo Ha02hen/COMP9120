@@ -37,20 +37,19 @@ Validate administrator based on login and password
 
 
 def checkAdmCredentials(login, password):
-    result = None
+    admLogin = None
 
     conn = openConnection()
     curs = conn.cursor()
 
-    curs.execute("Select * from Administrator")
+    curs.execute("SELECT * FROM Administrator")
     adms = curs.fetchall()
     for adm in adms:
         if login == adm[0] and password == adm[1]:
-            result = adm
-
+            admLogin = adm
     curs.close()
     conn.close()
-    return result
+    return admLogin
 
 
 '''
@@ -77,8 +76,8 @@ def findInstructionsByAdm(login):
                     ON C.code = A.code
     				LEFT JOIN frequency D
     				ON D.frequencycode = A.frequency
-                    WHERE administrator = '{}'
-                    ORDER BY ifexpiry, A.expirydate ASC, fullname DESC""".format(login))
+                    WHERE administrator = %s
+                    ORDER BY ifexpiry, A.expirydate ASC, fullname DESC""", (login,))
     result = curs.fetchall()
 
     instruction_list = list()
@@ -124,7 +123,8 @@ def findInstructionsByCriteria(searchString):
                     InvestInstruction.expirydate, 
 					Concat(Customer.firstname, ' ', Customer.lastname) AS fullname, 
                     ETF.name,
-                    InvestInstruction.notes
+                    InvestInstruction.notes,
+					InvestInstruction.administrator
                     from InvestInstruction
                     LEFT JOIN Customer
 					ON InvestInstruction.customer = Customer.login
@@ -170,6 +170,7 @@ def findInstructionsByCriteria(searchString):
 
 '''
 Add a new instruction
+Use stored procedure
 '''
 
 
@@ -177,10 +178,7 @@ def addInstruction(amount, frequency, customer, administrator, etf, notes):
     try:
         conn = openConnection()
         curs = conn.cursor()
-        # curs.execute("""SELECT FrequencyCode FROM frequency WHERE frequencydesc = %s""", (frequency,))
-        # result = curs.fetchone()
-        # curs.execute("""INSERT INTO InvestInstruction (Amount, Frequency, ExpiryDate, Customer, Administrator, Code, Notes)
-        #             VALUES (%s, %s, CURRENT_DATE + INTERVAL '1 Y', %s, %s, %s, %s)""", (amount, result, customer, administrator, etf, notes,))
+
         curs.callproc("addInstruction", [
                       frequency, amount, customer, administrator, etf, notes])
         conn.commit()
@@ -193,24 +191,24 @@ def addInstruction(amount, frequency, customer, administrator, etf, notes):
 
 '''
 Update an existing instruction
+Use stored procedure
 '''
 
 
 def updateInstruction(instructionid, amount, frequency, expirydate, customer, administrator, etf, notes):
+    success = True
     conn = openConnection()
     curs = conn.cursor()
 
     try:
-        # curs.execute(
-        #     "UPDATE investinstruction SET amount = {}, frequency = '{}', expiryDate = '{}', customer = '{}', administrator = '{}', code = '{}', notes = '{}' WHERE instructionId = {}".format(amount, frequency, expirydate, customer, administrator, etf, notes, instructionid)
-        # )
-        # conn.commit()
         curs.callproc("updateInstruction",
                       [amount, frequency, expirydate, customer, administrator, etf, notes, instructionid])
-        conn.commit()
-        curs.close()
-        conn.close()
 
-    except:
-        return False
-    return True
+    except psycopg2.Error as sqle:
+        print("psycopg2.Error : " + sqle.pgerror)
+        success = False
+
+    conn.commit()
+    curs.close()
+    conn.close()
+    return success
