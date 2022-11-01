@@ -12,8 +12,8 @@ Connect to the database using the connection string
 
 def openConnection():
     # connection parameters - ENTER YOUR LOGIN AND PASSWORD HERE
-    userid = "y22s2c9120_unikey"
-    passwd = ""
+    userid = "y22s2c9120_schi9883"
+    passwd = "Bdh19980207xx7"
     myHost = "soit-db-pro-2.ucc.usyd.edu.au"
 
     # Create a connection to the database
