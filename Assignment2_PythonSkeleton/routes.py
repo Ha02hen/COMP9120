@@ -150,7 +150,7 @@ def update_instruction():
             'instruction_id': request.args.get('instruction_id'),
             'amount': request.args.get('amount'),
             'frequency': request.args.get('frequency'),
-            'expirydate': datetime.strptime(request.args.get('expirydate'), '%Y-%m-%d').date(),
+            'expirydate': datetime.strptime(request.args.get('expirydate'), '%d-%m-%Y').date(),
             'customer': request.args.get('customer'),
             'etf': request.args.get('etf'),
             'notes': request.args.get('notes')

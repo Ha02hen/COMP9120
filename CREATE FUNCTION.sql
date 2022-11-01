@@ -7,7 +7,7 @@ BEGIN
 SELECT FrequencyCode INTO FCode FROM frequency WHERE frequencydesc = FrequencyInput;
 
 INSERT INTO InvestInstruction (Amount, Frequency, ExpiryDate, Customer, Administrator, Code, Notes) 
-VALUES (Amount, FCode, CURRENT_DATE + INTERVAL '1 Y', Customer, Administrator, Code, Notes);
+VALUES (Amount, FCode, CURRENT_DATE + INTERVAL '1 Y', LOWER(Customer), Administrator, UPPER(Code), Notes);
 
 END; $$ LANGUAGE plpgsql;
 
@@ -19,7 +19,7 @@ AS $$
 BEGIN
 
 UPDATE investinstruction 
-SET amount = AmountIn, frequency = FrequencyIn, expiryDate = ExpiryDateIn, customer = CustomerIn, administrator = AdministratorIn, code = CodeIn, notes = NotesIn
+SET amount = AmountIn, frequency = FrequencyIn, expiryDate = ExpiryDateIn, customer = LOWER(CustomerIn), administrator = AdministratorIn, code = UPPER(CodeIn), notes = NotesIn
 WHERE instructionId = Id;
 
 END; $$ LANGUAGE plpgsql;

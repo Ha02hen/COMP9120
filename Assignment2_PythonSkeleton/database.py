@@ -2,12 +2,14 @@
 import psycopg2
 
 #####################################################
-##  Database Connection
-######################################################
+# Database Connection
+#####################################################
 
 '''
 Connect to the database using the connection string
 '''
+
+
 def openConnection():
     # connection parameters - ENTER YOUR LOGIN AND PASSWORD HERE
     userid = "y22s2c9120_unikey"
@@ -19,43 +21,51 @@ def openConnection():
     try:
         # Parses the config file and connects using the connect string
         conn = psycopg2.connect(database=userid,
-                                    user=userid,
-                                    password=passwd,
-                                    host=myHost)
+                                user=userid,
+                                password=passwd,
+                                host=myHost)
     except psycopg2.Error as sqle:
         print("psycopg2.Error : " + sqle.pgerror)
 
     # return the connection to use
     return conn
 
+
 '''
 Validate administrator based on login and password
 '''
+
+
 def checkAdmCredentials(login, password):
+    result = None
+
     conn = openConnection()
     curs = conn.cursor()
+
     curs.execute("Select * from Administrator")
     adms = curs.fetchall()
     for adm in adms:
         if login == adm[0] and password == adm[1]:
-            return adm
+            result = adm
+
     curs.close()
     conn.close()
-
+    return result
 
 
 '''
 List all the associated instructions in the database by administrator
 '''
-def findInstructionsByAdm(login):
 
+
+def findInstructionsByAdm(login):
     conn = openConnection()
     curs = conn.cursor()
-    curs.execute("""SELECT A.instructionid, 
-                    A.amount, 
-                    D.frequencydesc, 
-                    A.expirydate, 
-                    concat(B.firstname, ' ', B.lastname) AS fullname, 
+    curs.execute("""SELECT A.instructionid,
+                    A.amount,
+                    D.frequencydesc,
+                    A.expirydate,
+                    concat(B.firstname, ' ', B.lastname) AS fullname,
                     C.name,
                     A.notes,
                     CASE A.expirydate>=current_date WHEN TRUE THEN 1
@@ -65,11 +75,10 @@ def findInstructionsByAdm(login):
                     ON A.customer = B.login
                     LEFT JOIN ETF C
                     ON C.code = A.code
-					LEFT JOIN frequency D
-					ON D.frequencycode = A.frequency
-                    WHERE administrator = %s
-                    ORDER BY ifexpiry, A.expirydate ASC, fullname DESC""", (login,))
-
+    				LEFT JOIN frequency D
+    				ON D.frequencycode = A.frequency
+                    WHERE administrator = '{}'
+                    ORDER BY ifexpiry, A.expirydate ASC, fullname DESC""".format(login))
     result = curs.fetchall()
 
     instruction_list = list()
@@ -83,7 +92,7 @@ def findInstructionsByAdm(login):
                 'instruction_id': instruction[0],
                 'amount': instruction[1],
                 'frequency': instruction[2],
-                'expirydate': instruction[3],
+                'expirydate': instruction[3].strftime("%d-%m-%Y"),
                 'customer': instruction[4],
                 'etf': instruction[5],
                 'notes': note
@@ -103,8 +112,9 @@ def findInstructionsByAdm(login):
 Find a list of instructions based on the searchString provided as parameter
 See assignment description for search specification
 '''
-def findInstructionsByCriteria(searchString):
 
+
+def findInstructionsByCriteria(searchString):
     conn = openConnection()
     curs = conn.cursor()
 
@@ -114,8 +124,7 @@ def findInstructionsByCriteria(searchString):
                     InvestInstruction.expirydate, 
 					Concat(Customer.firstname, ' ', Customer.lastname) AS fullname, 
                     ETF.name,
-                    InvestInstruction.notes,
-					InvestInstruction.administrator
+                    InvestInstruction.notes
                     from InvestInstruction
                     LEFT JOIN Customer
 					ON InvestInstruction.customer = Customer.login
@@ -128,7 +137,7 @@ def findInstructionsByCriteria(searchString):
 					OR LOWER(InvestInstruction.notes) LIKE LOWER('%{}%'))
 					AND InvestInstruction.expirydate >= CURRENT_DATE
 					ORDER BY InvestInstruction.administrator IS NOT NULL,
-					InvestInstruction.expirydate""".format(searchString,searchString,searchString))
+					InvestInstruction.expirydate""".format(searchString, searchString, searchString))
 
     result = curs.fetchall()
 
@@ -143,7 +152,7 @@ def findInstructionsByCriteria(searchString):
                 'instruction_id': instruction[0],
                 'amount': instruction[1],
                 'frequency': instruction[2],
-                'expirydate': instruction[3],
+                'expirydate': instruction[3].strftime("%d-%m-%Y"),
                 'customer': instruction[4],
                 'etf': instruction[5],
                 'notes': note
@@ -162,37 +171,46 @@ def findInstructionsByCriteria(searchString):
 '''
 Add a new instruction
 '''
+
+
 def addInstruction(amount, frequency, customer, administrator, etf, notes):
-    
     try:
         conn = openConnection()
         curs = conn.cursor()
-        curs.callproc("addInstruction", [frequency, amount, customer, administrator, etf, notes])
+        # curs.execute("""SELECT FrequencyCode FROM frequency WHERE frequencydesc = %s""", (frequency,))
+        # result = curs.fetchone()
+        # curs.execute("""INSERT INTO InvestInstruction (Amount, Frequency, ExpiryDate, Customer, Administrator, Code, Notes)
+        #             VALUES (%s, %s, CURRENT_DATE + INTERVAL '1 Y', %s, %s, %s, %s)""", (amount, result, customer, administrator, etf, notes,))
+        curs.callproc("addInstruction", [
+                      frequency, amount, customer, administrator, etf, notes])
+        conn.commit()
+        curs.close()
+        conn.close()
     except:
         return False
-
-    conn.commit()
-    curs.close()
-    conn.close()
     return True
 
 
 '''
 Update an existing instruction
 '''
+
+
 def updateInstruction(instructionid, amount, frequency, expirydate, customer, administrator, etf, notes):
-    success = True
     conn = openConnection()
     curs = conn.cursor()
 
     try:
-        curs.callproc("updateInstruction", [amount, frequency, expirydate, customer, administrator, etf, notes, instructionid])
+        # curs.execute(
+        #     "UPDATE investinstruction SET amount = {}, frequency = '{}', expiryDate = '{}', customer = '{}', administrator = '{}', code = '{}', notes = '{}' WHERE instructionId = {}".format(amount, frequency, expirydate, customer, administrator, etf, notes, instructionid)
+        # )
+        # conn.commit()
+        curs.callproc("updateInstruction",
+                      [amount, frequency, expirydate, customer, administrator, etf, notes, instructionid])
+        conn.commit()
+        curs.close()
+        conn.close()
 
-    except psycopg2.Error as sqle:
-        print("psycopg2.Error : " + sqle.pgerror)
-        success = False
-
-    conn.commit()
-    curs.close()
-    conn.close()
-    return success
+    except:
+        return False
+    return True
