@@ -16,10 +16,14 @@ END; $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION updateInstruction(IN AmountIn DECIMAL(12,2), IN FrequencyIn VARCHAR, IN ExpiryDateIn DATE, IN CustomerIn VARCHAR, IN AdministratorIn VARCHAR, IN CodeIn VARCHAR, IN NotesIn VARCHAR, IN Id INTEGER, OUT result CHAR)
 AS $$
 
+DECLARE FCode VARCHAR;
+
 BEGIN
 
+SELECT FrequencyCode INTO FCode FROM frequency WHERE frequencydesc = FrequencyIn;
+
 UPDATE investinstruction 
-SET amount = AmountIn, frequency = FrequencyIn, expiryDate = ExpiryDateIn, customer = LOWER(CustomerIn), administrator = AdministratorIn, code = UPPER(CodeIn), notes = NotesIn
+SET amount = AmountIn, frequency = FCode, expiryDate = ExpiryDateIn, customer = LOWER(CustomerIn), administrator = AdministratorIn, code = UPPER(CodeIn), notes = NotesIn
 WHERE instructionId = Id;
 
 END; $$ LANGUAGE plpgsql;
